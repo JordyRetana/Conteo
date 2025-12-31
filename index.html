@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Cuenta Regresiva 2026</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',sans-serif}
+body{
+    height:100vh;
+    background:radial-gradient(circle at top,#07182e,#02040a);
+    overflow:hidden;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    color:#fff;
+}
+
+/* ===== FONDO ESTRELLAS ===== */
+.stars{position:absolute;width:100%;height:100%;z-index:1}
+.star{
+    position:absolute;
+    width:2px;height:2px;
+    background:cyan;
+    border-radius:50%;
+    opacity:.7;
+    animation:float linear infinite;
+}
+@keyframes float{
+    from{transform:translateY(100vh)}
+    to{transform:translateY(-10vh)}
+}
+
+/* ===== CONTENEDOR ===== */
+.container{
+    z-index:2;
+    text-align:center;
+    padding:45px;
+    border-radius:25px;
+    background:rgba(10,25,55,.45);
+    backdrop-filter:blur(14px);
+    box-shadow:0 0 60px rgba(0,255,255,.4);
+    animation:pulse 4s infinite alternate;
+}
+@keyframes pulse{
+    from{box-shadow:0 0 35px rgba(0,255,255,.3)}
+    to{box-shadow:0 0 70px rgba(0,255,255,.9)}
+}
+
+h1{
+    font-size:3.3rem;
+    margin-bottom:25px;
+    text-shadow:0 0 25px cyan;
+}
+
+/* ===== CONTADOR ===== */
+.countdown{
+    display:flex;
+    gap:22px;
+    justify-content:center;
+    flex-wrap:wrap;
+}
+.time-box{
+    min-width:120px;
+    padding:22px;
+    border-radius:18px;
+    background:rgba(0,0,0,.45);
+    box-shadow:inset 0 0 18px rgba(0,255,255,.5);
+    animation:glow 2s infinite alternate;
+}
+@keyframes glow{
+    from{box-shadow:inset 0 0 12px rgba(0,255,255,.4)}
+    to{box-shadow:inset 0 0 25px rgba(0,255,255,1)}
+}
+.time{
+    font-size:3rem;
+    font-weight:bold;
+    color:#00ffff;
+}
+.label{
+    font-size:.9rem;
+    opacity:.85;
+}
+
+/* ===== ALERTA HORARIA ===== */
+.alert-hour{
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,.85);
+    display:none;
+    justify-content:center;
+    align-items:center;
+    z-index:5;
+}
+.alert-content{
+    font-size:4rem;
+    color:#00ffff;
+    text-align:center;
+    text-shadow:0 0 40px cyan;
+    animation:alertAnim 1.5s infinite alternate;
+}
+@keyframes alertAnim{
+    0%{transform:scale(1)}
+    50%{transform:scale(1.15) rotate(-1deg)}
+    100%{transform:scale(1.25) rotate(1deg)}
+}
+
+/* ===== FINAL ===== */
+.final{
+    display:none;
+    font-size:4rem;
+    color:#00ffff;
+    text-shadow:0 0 45px cyan;
+    animation:finalAnim 1.5s infinite alternate;
+}
+@keyframes finalAnim{
+    from{transform:scale(1)}
+    to{transform:scale(1.2)}
+}
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="container">
+    <h1>🎆 Cuenta Regresiva 2026 🎆</h1>
+
+    <div class="countdown" id="countdown">
+        <div class="time-box">
+            <div class="time" id="days">0</div>
+            <div class="label">Días</div>
+        </div>
+        <div class="time-box">
+            <div class="time" id="hours">0</div>
+            <div class="label">Horas</div>
+        </div>
+        <div class="time-box">
+            <div class="time" id="minutes">0</div>
+            <div class="label">Minutos</div>
+        </div>
+        <div class="time-box">
+            <div class="time" id="seconds">0</div>
+            <div class="label">Segundos</div>
+        </div>
+    </div>
+
+    <div class="final" id="final">🎉 ¡FELIZ 2026! 🎉</div>
+</div>
+
+<!-- ALERTA -->
+<div class="alert-hour" id="alertHour">
+    <div class="alert-content" id="alertText"></div>
+</div>
+
+<script>
+/* ===== ESTRELLAS ===== */
+const stars=document.getElementById('stars');
+for(let i=0;i<160;i++){
+    const s=document.createElement('div');
+    s.className='star';
+    s.style.left=Math.random()*100+'vw';
+    s.style.animationDuration=6+Math.random()*10+'s';
+    s.style.opacity=Math.random();
+    stars.appendChild(s);
+}
+
+/* ===== COUNTDOWN ===== */
+const target=new Date('2026-01-01T00:00:00-06:00');
+const d=document.getElementById('days');
+const h=document.getElementById('hours');
+const m=document.getElementById('minutes');
+const s=document.getElementById('seconds');
+const final=document.getElementById('final');
+const countdown=document.getElementById('countdown');
+
+const alertBox=document.getElementById('alertHour');
+const alertText=document.getElementById('alertText');
+
+let lastHour=null;
+
+function showHourAlert(hours){
+    if(hours<=0) return;
+    alertText.innerHTML=`⏰<br>¡FALTAN ${hours} HORAS!`;
+    alertBox.style.display='flex';
+    setTimeout(()=>alertBox.style.display='none',3000);
+}
+
+function update(){
+    const now=new Date();
+    const diff=target-now;
+
+    if(diff<=0){
+        countdown.style.display='none';
+        final.style.display='block';
+        return;
+    }
+
+    const days=Math.floor(diff/86400000);
+    const hours=Math.floor((diff/3600000)%24);
+    const minutes=Math.floor((diff/60000)%60);
+    const seconds=Math.floor((diff/1000)%60);
+
+    if(hours!==lastHour && days===0){
+        showHourAlert(hours);
+        lastHour=hours;
+    }
+
+    d.textContent=days;
+    h.textContent=hours.toString().padStart(2,'0');
+    m.textContent=minutes.toString().padStart(2,'0');
+    s.textContent=seconds.toString().padStart(2,'0');
+}
+
+update();
+setInterval(update,1000);
+</script>
+
+</body>
+</html>
