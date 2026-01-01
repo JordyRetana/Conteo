@@ -44,7 +44,7 @@ body{
 }
 
 h1{
-    font-size:3.3rem;
+    font-size:3.2rem;
     margin-bottom:25px;
     text-shadow:0 0 25px cyan;
 }
@@ -68,7 +68,7 @@ h1{
     color:#00ffff;
 }
 
-/* ===== ALERTA GENERAL ===== */
+/* ===== ALERTAS ===== */
 .alert{
     display:none;
     position:fixed;
@@ -79,7 +79,7 @@ h1{
     align-items:center;
 }
 .alert div{
-    font-size:2.8rem;
+    font-size:3.5rem;
     color:#00ffff;
     text-align:center;
     text-shadow:0 0 40px cyan;
@@ -91,7 +91,7 @@ h1{
     position:fixed;
     inset:0;
     background:#000;
-    z-index:8;
+    z-index:9;
     justify-content:center;
     align-items:center;
 }
@@ -99,6 +99,7 @@ h1{
     font-size:14rem;
     font-weight:900;
     color:#00ffff;
+    text-shadow:0 0 80px cyan;
 }
 
 /* ===== FINAL ===== */
@@ -106,6 +107,7 @@ h1{
     display:none;
     font-size:4.5rem;
     color:#00ffff;
+    text-shadow:0 0 50px cyan;
 }
 </style>
 </head>
@@ -127,9 +129,9 @@ h1{
     <div class="final" id="final">🎉 ¡FELIZ 2026! 🎉</div>
 </div>
 
-<!-- ALERTA SONIDO LISTO -->
-<div class="alert" id="soundAlert">
-    <div>🔊<br>Video cargado<br>Sonido listo para reproducirse<br>al finalizar el conteo</div>
+<!-- ALERTA GENERAL -->
+<div class="alert" id="alertBox">
+    <div id="alertText"></div>
 </div>
 
 <!-- CUENTA FINAL -->
@@ -155,16 +157,19 @@ for(let i=0;i<150;i++){
 
 /* ===== VARIABLES ===== */
 const target=new Date('2026-01-01T00:00:00-06:00');
-const d=days, h=hours, m=minutes, s=seconds;
 
+const d=days, h=hours, m=minutes, s=seconds;
 const countdown=document.getElementById('countdown');
 const final=document.getElementById('final');
 const finalCount=document.getElementById('finalCount');
 const finalNumber=document.getElementById('finalNumber');
 
-const iframe=document.getElementById('music');
-const soundAlert=document.getElementById('soundAlert');
+const alertBox=document.getElementById('alertBox');
+const alertText=document.getElementById('alertText');
 
+const iframe=document.getElementById('music');
+
+let lastAlert=null;
 let soundReady=false;
 let musicPlayed=false;
 
@@ -178,14 +183,15 @@ function activateSound(){
         '{"event":"command","func":"pauseVideo","args":""}','*');
 
     soundReady=true;
-    soundAlert.style.display='flex';
-    setTimeout(()=>soundAlert.style.display='none',2500);
+    alertText.innerHTML="🔊<br>Video cargado<br>Sonido listo para reproducirse<br>al finalizar el conteo";
+    alertBox.style.display='flex';
+    setTimeout(()=>alertBox.style.display='none',2500);
 }
 
 document.addEventListener('click',activateSound);
 document.addEventListener('keydown',activateSound);
 
-/* ===== PLAY FINAL ===== */
+/* ===== REPRODUCIR MUSICA ===== */
 function playMusic(){
     iframe.contentWindow.postMessage(
         '{"event":"command","func":"unMute","args":""}','*');
@@ -214,6 +220,17 @@ function update(){
     const minutes=Math.floor((diff/60000)%60);
     const seconds=Math.floor((diff/1000)%60);
 
+    /* ALERTAS CADA 5 MINUTOS */
+    if(days===0 && hours===0 && minutes>0 && minutes%5===0){
+        if(minutes!==lastAlert){
+            alertText.innerHTML=`⏰<br>¡FALTAN ${minutes} MINUTOS!`;
+            alertBox.style.display='flex';
+            setTimeout(()=>alertBox.style.display='none',3000);
+            lastAlert=minutes;
+        }
+    }
+
+    /* CUENTA FINAL 10..0 */
     if(days===0 && hours===0 && minutes===0 && seconds<=10){
         countdown.style.display='none';
         finalCount.style.display='flex';
