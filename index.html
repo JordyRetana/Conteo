@@ -41,11 +41,6 @@ body{
     background:rgba(10,25,55,.45);
     backdrop-filter:blur(14px);
     box-shadow:0 0 60px rgba(0,255,255,.4);
-    animation:pulse 4s infinite alternate;
-}
-@keyframes pulse{
-    from{box-shadow:0 0 35px rgba(0,255,255,.3)}
-    to{box-shadow:0 0 70px rgba(0,255,255,.9)}
 }
 
 h1{
@@ -66,37 +61,28 @@ h1{
     padding:22px;
     border-radius:18px;
     background:rgba(0,0,0,.45);
-    box-shadow:inset 0 0 18px rgba(0,255,255,.5);
 }
 .time{
     font-size:3rem;
     font-weight:bold;
     color:#00ffff;
 }
-.label{
-    font-size:.9rem;
-    opacity:.85;
-}
 
-/* ===== ALERTA MINUTOS ===== */
-.minute-alert{
+/* ===== ALERTA GENERAL ===== */
+.alert{
     display:none;
     position:fixed;
     inset:0;
     background:rgba(0,0,0,.85);
-    z-index:6;
+    z-index:10;
     justify-content:center;
     align-items:center;
 }
-.minute-alert div{
-    font-size:4rem;
+.alert div{
+    font-size:2.8rem;
     color:#00ffff;
-    text-shadow:0 0 60px cyan;
-    animation:alertAnim 1.2s infinite alternate;
-}
-@keyframes alertAnim{
-    from{transform:scale(1)}
-    to{transform:scale(1.2)}
+    text-align:center;
+    text-shadow:0 0 40px cyan;
 }
 
 /* ===== CUENTA FINAL ===== */
@@ -104,8 +90,8 @@ h1{
     display:none;
     position:fixed;
     inset:0;
-    background:radial-gradient(circle,#02040a,#000);
-    z-index:7;
+    background:#000;
+    z-index:8;
     justify-content:center;
     align-items:center;
 }
@@ -113,12 +99,6 @@ h1{
     font-size:14rem;
     font-weight:900;
     color:#00ffff;
-    text-shadow:0 0 80px cyan,0 0 160px cyan;
-    animation:boom .7s infinite alternate;
-}
-@keyframes boom{
-    from{transform:scale(1)}
-    to{transform:scale(1.15)}
 }
 
 /* ===== FINAL ===== */
@@ -126,12 +106,6 @@ h1{
     display:none;
     font-size:4.5rem;
     color:#00ffff;
-    text-shadow:0 0 45px cyan;
-    animation:finalAnim 1.5s infinite alternate;
-}
-@keyframes finalAnim{
-    from{transform:scale(1)}
-    to{transform:scale(1.25)}
 }
 </style>
 </head>
@@ -144,30 +118,18 @@ h1{
     <h1>🎆 Cuenta Regresiva 2026 🎆</h1>
 
     <div class="countdown" id="countdown">
-        <div class="time-box">
-            <div class="time" id="days">0</div>
-            <div class="label">Días</div>
-        </div>
-        <div class="time-box">
-            <div class="time" id="hours">00</div>
-            <div class="label">Horas</div>
-        </div>
-        <div class="time-box">
-            <div class="time" id="minutes">00</div>
-            <div class="label">Minutos</div>
-        </div>
-        <div class="time-box">
-            <div class="time" id="seconds">00</div>
-            <div class="label">Segundos</div>
-        </div>
+        <div class="time-box"><div class="time" id="days">0</div>Días</div>
+        <div class="time-box"><div class="time" id="hours">00</div>Horas</div>
+        <div class="time-box"><div class="time" id="minutes">00</div>Minutos</div>
+        <div class="time-box"><div class="time" id="seconds">00</div>Segundos</div>
     </div>
 
     <div class="final" id="final">🎉 ¡FELIZ 2026! 🎉</div>
 </div>
 
-<!-- ALERTA MINUTOS -->
-<div class="minute-alert" id="minuteAlert">
-    <div id="minuteText"></div>
+<!-- ALERTA SONIDO LISTO -->
+<div class="alert" id="soundAlert">
+    <div>🔊<br>Video cargado<br>Sonido listo para reproducirse<br>al finalizar el conteo</div>
 </div>
 
 <!-- CUENTA FINAL -->
@@ -175,51 +137,75 @@ h1{
     <div class="final-number" id="finalNumber">10</div>
 </div>
 
+<!-- YOUTUBE OCULTO -->
+<iframe id="music"
+src="https://www.youtube.com/embed/Sd8qFu-KenA?enablejsapi=1&mute=1"
+style="display:none"></iframe>
+
 <script>
 /* ===== ESTRELLAS ===== */
 const stars=document.getElementById('stars');
-for(let i=0;i<160;i++){
+for(let i=0;i<150;i++){
     const s=document.createElement('div');
     s.className='star';
     s.style.left=Math.random()*100+'vw';
     s.style.animationDuration=6+Math.random()*10+'s';
-    s.style.opacity=Math.random();
     stars.appendChild(s);
 }
 
-/* ===== ELEMENTOS ===== */
+/* ===== VARIABLES ===== */
 const target=new Date('2026-01-01T00:00:00-06:00');
-
-const d=document.getElementById('days');
-const h=document.getElementById('hours');
-const m=document.getElementById('minutes');
-const s=document.getElementById('seconds');
+const d=days, h=hours, m=minutes, s=seconds;
 
 const countdown=document.getElementById('countdown');
 const final=document.getElementById('final');
 const finalCount=document.getElementById('finalCount');
 const finalNumber=document.getElementById('finalNumber');
 
-const minuteAlert=document.getElementById('minuteAlert');
-const minuteText=document.getElementById('minuteText');
+const iframe=document.getElementById('music');
+const soundAlert=document.getElementById('soundAlert');
 
-let lastMinuteAlert=null;
+let soundReady=false;
+let musicPlayed=false;
 
-/* ===== FUNCIONES ===== */
-function showMinuteAlert(min){
-    minuteText.innerHTML=`⏰<br>¡FALTAN ${min} MINUTOS!`;
-    minuteAlert.style.display='flex';
-    setTimeout(()=>minuteAlert.style.display='none',3000);
+/* ===== ACTIVAR SONIDO ===== */
+function activateSound(){
+    if(soundReady) return;
+
+    iframe.contentWindow.postMessage(
+        '{"event":"command","func":"playVideo","args":""}','*');
+    iframe.contentWindow.postMessage(
+        '{"event":"command","func":"pauseVideo","args":""}','*');
+
+    soundReady=true;
+    soundAlert.style.display='flex';
+    setTimeout(()=>soundAlert.style.display='none',2500);
 }
 
+document.addEventListener('click',activateSound);
+document.addEventListener('keydown',activateSound);
+
+/* ===== PLAY FINAL ===== */
+function playMusic(){
+    iframe.contentWindow.postMessage(
+        '{"event":"command","func":"unMute","args":""}','*');
+    iframe.contentWindow.postMessage(
+        '{"event":"command","func":"playVideo","args":""}','*');
+}
+
+/* ===== CONTADOR ===== */
 function update(){
-    const now=new Date();
-    const diff=target-now;
+    const diff=target-new Date();
 
     if(diff<=0){
-        finalCount.style.display='none';
         countdown.style.display='none';
+        finalCount.style.display='none';
         final.style.display='block';
+
+        if(soundReady && !musicPlayed){
+            playMusic();
+            musicPlayed=true;
+        }
         return;
     }
 
@@ -228,15 +214,6 @@ function update(){
     const minutes=Math.floor((diff/60000)%60);
     const seconds=Math.floor((diff/1000)%60);
 
-    /* ===== ALERTAS CADA 10 MINUTOS ===== */
-    if(days===0 && hours===0 && seconds===0 && minutes%10===0 && minutes>0){
-        if(minutes!==lastMinuteAlert){
-            showMinuteAlert(minutes);
-            lastMinuteAlert=minutes;
-        }
-    }
-
-    /* ===== CUENTA FINAL 10..0 ===== */
     if(days===0 && hours===0 && minutes===0 && seconds<=10){
         countdown.style.display='none';
         finalCount.style.display='flex';
