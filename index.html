@@ -17,7 +17,7 @@ body{
     color:#fff;
 }
 
-/* ===== FONDO ESTRELLAS ===== */
+/* ===== ESTRELLAS ===== */
 .stars{position:absolute;width:100%;height:100%;z-index:1}
 .star{
     position:absolute;
@@ -67,11 +67,6 @@ h1{
     border-radius:18px;
     background:rgba(0,0,0,.45);
     box-shadow:inset 0 0 18px rgba(0,255,255,.5);
-    animation:glow 2s infinite alternate;
-}
-@keyframes glow{
-    from{box-shadow:inset 0 0 12px rgba(0,255,255,.4)}
-    to{box-shadow:inset 0 0 25px rgba(0,255,255,1)}
 }
 .time{
     font-size:3rem;
@@ -83,43 +78,64 @@ h1{
     opacity:.85;
 }
 
-/* ===== ALERTA HORARIA ===== */
-.alert-hour{
+/* ===== ALERTA MINUTOS ===== */
+.minute-alert{
+    display:none;
     position:fixed;
     inset:0;
     background:rgba(0,0,0,.85);
-    display:none;
+    z-index:6;
     justify-content:center;
     align-items:center;
-    z-index:5;
 }
-.alert-content{
+.minute-alert div{
     font-size:4rem;
     color:#00ffff;
-    text-align:center;
-    text-shadow:0 0 40px cyan;
-    animation:alertAnim 1.5s infinite alternate;
+    text-shadow:0 0 60px cyan;
+    animation:alertAnim 1.2s infinite alternate;
 }
 @keyframes alertAnim{
-    0%{transform:scale(1)}
-    50%{transform:scale(1.15) rotate(-1deg)}
-    100%{transform:scale(1.25) rotate(1deg)}
+    from{transform:scale(1)}
+    to{transform:scale(1.2)}
+}
+
+/* ===== CUENTA FINAL ===== */
+.final-count{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:radial-gradient(circle,#02040a,#000);
+    z-index:7;
+    justify-content:center;
+    align-items:center;
+}
+.final-number{
+    font-size:14rem;
+    font-weight:900;
+    color:#00ffff;
+    text-shadow:0 0 80px cyan,0 0 160px cyan;
+    animation:boom .7s infinite alternate;
+}
+@keyframes boom{
+    from{transform:scale(1)}
+    to{transform:scale(1.15)}
 }
 
 /* ===== FINAL ===== */
 .final{
     display:none;
-    font-size:4rem;
+    font-size:4.5rem;
     color:#00ffff;
     text-shadow:0 0 45px cyan;
     animation:finalAnim 1.5s infinite alternate;
 }
 @keyframes finalAnim{
     from{transform:scale(1)}
-    to{transform:scale(1.2)}
+    to{transform:scale(1.25)}
 }
 </style>
 </head>
+
 <body>
 
 <div class="stars" id="stars"></div>
@@ -133,15 +149,15 @@ h1{
             <div class="label">Días</div>
         </div>
         <div class="time-box">
-            <div class="time" id="hours">0</div>
+            <div class="time" id="hours">00</div>
             <div class="label">Horas</div>
         </div>
         <div class="time-box">
-            <div class="time" id="minutes">0</div>
+            <div class="time" id="minutes">00</div>
             <div class="label">Minutos</div>
         </div>
         <div class="time-box">
-            <div class="time" id="seconds">0</div>
+            <div class="time" id="seconds">00</div>
             <div class="label">Segundos</div>
         </div>
     </div>
@@ -149,9 +165,14 @@ h1{
     <div class="final" id="final">🎉 ¡FELIZ 2026! 🎉</div>
 </div>
 
-<!-- ALERTA -->
-<div class="alert-hour" id="alertHour">
-    <div class="alert-content" id="alertText"></div>
+<!-- ALERTA MINUTOS -->
+<div class="minute-alert" id="minuteAlert">
+    <div id="minuteText"></div>
+</div>
+
+<!-- CUENTA FINAL -->
+<div class="final-count" id="finalCount">
+    <div class="final-number" id="finalNumber">10</div>
 </div>
 
 <script>
@@ -166,25 +187,29 @@ for(let i=0;i<160;i++){
     stars.appendChild(s);
 }
 
-/* ===== COUNTDOWN ===== */
+/* ===== ELEMENTOS ===== */
 const target=new Date('2026-01-01T00:00:00-06:00');
+
 const d=document.getElementById('days');
 const h=document.getElementById('hours');
 const m=document.getElementById('minutes');
 const s=document.getElementById('seconds');
-const final=document.getElementById('final');
+
 const countdown=document.getElementById('countdown');
+const final=document.getElementById('final');
+const finalCount=document.getElementById('finalCount');
+const finalNumber=document.getElementById('finalNumber');
 
-const alertBox=document.getElementById('alertHour');
-const alertText=document.getElementById('alertText');
+const minuteAlert=document.getElementById('minuteAlert');
+const minuteText=document.getElementById('minuteText');
 
-let lastHour=null;
+let lastMinuteAlert=null;
 
-function showHourAlert(hours){
-    if(hours<=0) return;
-    alertText.innerHTML=`⏰<br>¡FALTAN ${hours} HORAS!`;
-    alertBox.style.display='flex';
-    setTimeout(()=>alertBox.style.display='none',3000);
+/* ===== FUNCIONES ===== */
+function showMinuteAlert(min){
+    minuteText.innerHTML=`⏰<br>¡FALTAN ${min} MINUTOS!`;
+    minuteAlert.style.display='flex';
+    setTimeout(()=>minuteAlert.style.display='none',3000);
 }
 
 function update(){
@@ -192,6 +217,7 @@ function update(){
     const diff=target-now;
 
     if(diff<=0){
+        finalCount.style.display='none';
         countdown.style.display='none';
         final.style.display='block';
         return;
@@ -202,9 +228,20 @@ function update(){
     const minutes=Math.floor((diff/60000)%60);
     const seconds=Math.floor((diff/1000)%60);
 
-    if(hours!==lastHour && days===0){
-        showHourAlert(hours);
-        lastHour=hours;
+    /* ===== ALERTAS CADA 10 MINUTOS ===== */
+    if(days===0 && hours===0 && seconds===0 && minutes%10===0 && minutes>0){
+        if(minutes!==lastMinuteAlert){
+            showMinuteAlert(minutes);
+            lastMinuteAlert=minutes;
+        }
+    }
+
+    /* ===== CUENTA FINAL 10..0 ===== */
+    if(days===0 && hours===0 && minutes===0 && seconds<=10){
+        countdown.style.display='none';
+        finalCount.style.display='flex';
+        finalNumber.textContent=seconds;
+        return;
     }
 
     d.textContent=days;
